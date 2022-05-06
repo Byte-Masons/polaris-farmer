@@ -218,17 +218,6 @@ abstract contract ReaperBaseStrategyv2 is
     function balanceOf() public view virtual override returns (uint256);
 
     /**
-     * @dev Function to retire the strategy. Claims all rewards and withdraws
-     *      all principal from external contracts, and sends everything back to
-     *      the vault. Guardian and roles with higher privilege can retire the strat.
-     *
-     * Note: this is not an emergency withdraw function. For that, see panic().
-     */
-    function retireStrat() external override atLeastRole(GUARDIAN) {
-        _retireStrat();
-    }
-
-    /**
      * @dev Pauses deposits. Withdraws all funds leaving rewards behind.
      *      Guardian and roles with higher privilege can panic.
      */
@@ -414,13 +403,6 @@ abstract contract ReaperBaseStrategyv2 is
      *      including charging any fees.
      */
     function _harvestCore() internal virtual;
-
-    /**
-     * @dev subclasses should add their custom logic to retire the strategy in this function.
-     *      Note that we expect all funds (including any pending rewards) to be sent back to
-     *      the vault in this function.
-     */
-    function _retireStrat() internal virtual;
 
     /**
      * @dev subclasses should add their custom logic to withdraw the principal from
