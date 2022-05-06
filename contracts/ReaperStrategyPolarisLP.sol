@@ -8,7 +8,7 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev Deposit TOMB-MAI LP in TShareRewardsPool. Harvest SPOLAR rewards and recompound.
+ * @dev Deposit LP in the Polaris MasterCHef. Harvest SPOLAR rewards and recompound.
  */
 contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -21,21 +21,19 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
      * @dev Tokens Used:
      * {NEAR} - Required for liquidity routing when doing swaps.
      * {SPOLAR} - Reward token for depositing LP into TShareRewardsPool.
-     * {want} - Address of TOMB-MAI LP token. (lowercase name for FE compatibility)
-     * {lpToken0} - TOMB (name for FE compatibility)
-     * {lpToken1} - MAI (name for FE compatibility)
+     * {want} - Address of the LP token. (lowercase name for FE compatibility)
+     * {lpToken0} - token 0 of the LP
+     * {lpToken1} - token 1 of the LP
      */
     address public constant NEAR = address(0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d);
     address public constant SPOLAR = address(0x9D6fc90b25976E40adaD5A3EdD08af9ed7a21729);
     address public constant want = address(0xADf9D0C77c70FCb1fDB868F54211288fCE9937DF);
-    address public constant lpToken0 = NEAR;
-    address public constant lpToken1 = SPOLAR;
+    address public constant lpToken0 = SPOLAR;
+    address public constant lpToken1 = NEAR;
 
     /**
      * @dev Paths used to swap tokens:
      * {spolarToNearPath} - to swap {SPOLAR} to {NEAR} (using TRISOLARIS_ROUTER)
-     * {wftmToTombPath} - to swap {NEAR} to {lpToken0} (using TRISOLARIS_ROUTER)
-     * {tombToMaiPath} - to swap half of {lpToken0} to {lpToken1} (using TOMB_ROUTER)
      */
     address[] public spolarToNearPath;
 
@@ -86,11 +84,9 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. Claims {SPOLAR} from the {TSHARE_REWARDS_POOL}.
-     *      2. Swaps {SPOLAR} to {NEAR} using {TRISOLARIS_ROUTER}.
-     *      3. Claims fees for the harvest caller and treasury.
-     *      4. Swaps the {NEAR} token for {lpToken0} using {TRISOLARIS_ROUTER}.
-     *      5. Swaps half of {lpToken0} to {lpToken1} using {TOMB_ROUTER}.
+     *      1. Claims {SPOLAR} from the {MASTER_CHEF}.
+     *      2. Claims fees for the harvest caller and treasury.
+     *      3. Swaps half of {lpToken0} to {lpToken1} using {TRISOLARIS_ROUTER}.
      *      6. Creates new LP tokens and deposits.
      */
     function _harvestCore() internal override {
@@ -148,7 +144,7 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
     }
 
     /**
-     * @dev Core harvest function. Adds more liquidity using {lpToken0} and {lpToken1}.
+     * @dev Core harvest function. Adds more liquidity using {SPOLAR} and {NEAR}.
      */
     function _addLiquidity() internal {
         uint256 spolarBalanceHalf = IERC20Upgradeable(SPOLAR).balanceOf(address(this)) / 2;
