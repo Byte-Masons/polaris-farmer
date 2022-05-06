@@ -3,14 +3,14 @@
   "proxies": [
     {
       "address": "0x3887f0555399FfB97EC62B7f8F99290d5007e769",
-      "txHash": "0x9b8bba724a6c706c5b08362de5c2ff9a420eeea4692214d7b4bea0965164ef87",
+      "txHash": "0x5dfd1fcdd43c43e5c9d25ef67c29c2ea8462fc21b2df1139bc46e008539bc327",
       "kind": "uups"
     }
   ],
   "impls": {
-    "dcfa42b54af776d6680f37b374ecbe5ec76d28c6e5e2ddc03813a8c684388d9b": {
+    "e0f4d5694bef56a5fc4376fe34956ff909a958f41a0a15dcbbf10aeab18dc6bf": {
       "address": "0x7484BA2BbCAa3A568021d508C0897dE0F7a314Da",
-      "txHash": "0x1298b8059d556b2ee48da9248b7a5afb1a270694906e839c3973a1194bdefc30",
+      "txHash": "0x9de5edcb9371ddea8a970d4d8089cbd880b1c4dce46674b8d08063fc51997136",
       "layout": {
         "storage": [
           {
@@ -114,7 +114,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)5832_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)5892_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv2",
             "src": "contracts\\abstract\\ReaperBaseStrategyv2.sol:27"
           },
@@ -220,15 +220,31 @@
             "slot": "364",
             "type": "t_array(t_address)dyn_storage",
             "contract": "ReaperStrategyPolarisLP",
-            "src": "contracts\\ReaperStrategyPolarisLP.sol:38"
+            "src": "contracts\\ReaperStrategyPolarisLP.sol:41"
+          },
+          {
+            "label": "spolarToUsdcPath",
+            "offset": 0,
+            "slot": "365",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "ReaperStrategyPolarisLP",
+            "src": "contracts\\ReaperStrategyPolarisLP.sol:42"
           },
           {
             "label": "poolId",
             "offset": 0,
-            "slot": "365",
+            "slot": "366",
             "type": "t_uint256",
             "contract": "ReaperStrategyPolarisLP",
-            "src": "contracts\\ReaperStrategyPolarisLP.sol:44"
+            "src": "contracts\\ReaperStrategyPolarisLP.sol:48"
+          },
+          {
+            "label": "chargeFeesInUsdc",
+            "offset": 0,
+            "slot": "367",
+            "type": "t_bool",
+            "contract": "ReaperStrategyPolarisLP",
+            "src": "contracts\\ReaperStrategyPolarisLP.sol:54"
           }
         ],
         "types": {
@@ -244,7 +260,7 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)5832_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)5892_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -292,7 +308,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)5832_storage": {
+          "t_struct(Harvest)5892_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest",
             "members": [
               {

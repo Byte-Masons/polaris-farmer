@@ -21,12 +21,14 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
      * @dev Tokens Used:
      * {NEAR} - Required for liquidity routing when doing swaps.
      * {SPOLAR} - Reward token for depositing LP into TShareRewardsPool.
+     * {USDC} - Alternative token to charge fees
      * {want} - Address of the LP token. (lowercase name for FE compatibility)
      * {lpToken0} - token 0 of the LP
      * {lpToken1} - token 1 of the LP
      */
     address public constant NEAR = address(0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d);
     address public constant SPOLAR = address(0x9D6fc90b25976E40adaD5A3EdD08af9ed7a21729);
+    address public constant USDC = address(0xB12BFcA5A55806AaF64E99521918A4bf0fC40802);
     address public constant want = address(0xADf9D0C77c70FCb1fDB868F54211288fCE9937DF);
     address public constant lpToken0 = SPOLAR;
     address public constant lpToken1 = NEAR;
@@ -34,14 +36,22 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
     /**
      * @dev Paths used to swap tokens:
      * {spolarToNearPath} - to swap {SPOLAR} to {NEAR} (using TRISOLARIS_ROUTER)
+     * {spolarToNearPath} - to swap {SPOLAR} to {USDC} (using TRISOLARIS_ROUTER)
      */
     address[] public spolarToNearPath;
+    address[] public spolarToUsdcPath;
 
     /**
-     * @dev Tomb variables
+     * @dev Polaris variables
      * {poolId} - ID of pool in which to deposit LP tokens
      */
     uint256 public poolId;
+
+    /**
+     * @dev Strategy variables
+     * {chargeFeesInUsdc} - Can be set to charge fees in USDC
+     */
+    bool public chargeFeesInUsdc;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -55,7 +65,9 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
     ) public initializer {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists, _multisigRoles);
         spolarToNearPath = [SPOLAR, NEAR];
+        spolarToUsdcPath = [SPOLAR, NEAR, USDC];
         poolId = 1;
+        chargeFeesInUsdc = true;
     }
 
     /**
@@ -122,24 +134,32 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
         );
     }
 
+    function _chargeFees() internal {
+        if (chargeFeesInUsdc) {
+            _chargeFees(USDC, spolarToUsdcPath);
+        } else {
+            _chargeFees(NEAR, spolarToNearPath);
+        }
+    }
+
     /**
      * @dev Core harvest function.
-     *      Charges fees based on the amount of NEAR gained from reward
+     *      Charges fees based on the amount of rewards earned
      */
-    function _chargeFees() internal {
+    function _chargeFees(address _feeToken, address[] storage _path) internal {
         uint256 spolarFee = IERC20Upgradeable(SPOLAR).balanceOf(address(this)) * totalFee / PERCENT_DIVISOR;
-        _swap(spolarFee, spolarToNearPath, TRISOLARIS_ROUTER);
-        IERC20Upgradeable near = IERC20Upgradeable(NEAR);
-        uint256 nearFee = near.balanceOf(address(this));
-        if (nearFee != 0) {
-            uint256 callFeeToUser = (nearFee * callFee) / PERCENT_DIVISOR;
-            uint256 treasuryFeeToVault = (nearFee * treasuryFee) / PERCENT_DIVISOR;
+        _swap(spolarFee, _path, TRISOLARIS_ROUTER);
+        IERC20Upgradeable feeToken = IERC20Upgradeable(_feeToken);
+        uint256 fee = feeToken.balanceOf(address(this));
+        if (fee != 0) {
+            uint256 callFeeToUser = (fee * callFee) / PERCENT_DIVISOR;
+            uint256 treasuryFeeToVault = (fee * treasuryFee) / PERCENT_DIVISOR;
             uint256 feeToStrategist = (treasuryFeeToVault * strategistFee) / PERCENT_DIVISOR;
             treasuryFeeToVault -= feeToStrategist;
 
-            near.safeTransfer(msg.sender, callFeeToUser);
-            near.safeTransfer(treasury, treasuryFeeToVault);
-            near.safeTransfer(strategistRemitter, feeToStrategist);
+            feeToken.safeTransfer(msg.sender, callFeeToUser);
+            feeToken.safeTransfer(treasury, treasuryFeeToVault);
+            feeToken.safeTransfer(strategistRemitter, feeToStrategist);
         }
     }
 
@@ -191,9 +211,9 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
 
         profit += IERC20Upgradeable(NEAR).balanceOf(address(this));
 
-        uint256 nearFee = (profit * totalFee) / PERCENT_DIVISOR;
-        callFeeToUser = (nearFee * callFee) / PERCENT_DIVISOR;
-        profit -= nearFee;
+        uint256 fee = (profit * totalFee) / PERCENT_DIVISOR;
+        callFeeToUser = (fee * callFee) / PERCENT_DIVISOR;
+        profit -= fee;
     }
 
     /**
@@ -201,5 +221,12 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
      */
     function _reclaimWant() internal override {
         IPolarisRewarder(MASTER_CHEF).emergencyWithdraw(poolId);
+    }
+
+    /**
+     * Changes which token fees are charged in.
+     */
+    function _setChargeFeesInUsdc(bool _chargeFeesInUsdc) external atLeastRole(STRATEGIST) {
+        chargeFeesInUsdc = _chargeFeesInUsdc;
     }
 }
