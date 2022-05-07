@@ -5,7 +5,10 @@ pragma solidity ^0.8.0;
 import "./abstract/ReaperBaseStrategyv2.sol";
 import "./interfaces/IPolarisRewarder.sol";
 import "./interfaces/IUniswapV2Router02.sol";
+import "./interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
+import "hardhat/console.sol";
 
 /**
  * @dev Deposit LP in the Polaris MasterCHef. Harvest SPOLAR rewards and recompound.
@@ -29,9 +32,9 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
     address public constant NEAR = address(0xC42C30aC6Cc15faC9bD938618BcaA1a1FaE8501d);
     address public constant SPOLAR = address(0x9D6fc90b25976E40adaD5A3EdD08af9ed7a21729);
     address public constant USDC = address(0xB12BFcA5A55806AaF64E99521918A4bf0fC40802);
-    address public constant want = address(0x3e50da46cB79d1f9F08445984f207278796CE2d2);
-    address public constant lpToken0 = address(0x25e801Eb75859Ba4052C4ac4233ceC0264eaDF8c);
-    address public constant lpToken1 = address(0xC4bdd27c33ec7daa6fcfd8532ddB524Bf4038096);
+    address public constant want = address(0x3fa4d0145a0b6Ad0584B1ad5f61cB490A04d8242);
+    address public constant lpToken0 = NEAR;
+    address public constant lpToken1 = address(0xf0f3b9Eee32b1F490A4b8720cf6F005d4aE9eA86);
 
     /**
      * @dev Paths used to swap tokens:
@@ -70,9 +73,9 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists, _multisigRoles);
         spolarToNearPath = [SPOLAR, NEAR];
         spolarToUsdcPath = [SPOLAR, NEAR, USDC];
-        spolarToLpPath = [SPOLAR, NEAR, lpToken1];
-        lpTokensPath = [lpToken1, lpToken0];
-        poolId = 4;
+        spolarToLpPath = [SPOLAR, NEAR];
+        lpTokensPath = [lpToken0, lpToken1];
+        poolId = 0;
         chargeFeesInUsdc = false;
     }
 
@@ -175,7 +178,7 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
     function _addLiquidity() internal {
         uint256 spolarBalance = IERC20Upgradeable(SPOLAR).balanceOf(address(this));
         _swap(spolarBalance, spolarToLpPath, TRISOLARIS_ROUTER);
-        uint256 lpBalanceHalf = IERC20Upgradeable(lpToken1).balanceOf(address(this)) / 2;
+        uint256 lpBalanceHalf = IERC20Upgradeable(lpToken0).balanceOf(address(this)) / 2;
         _swap(lpBalanceHalf, lpTokensPath, TRISOLARIS_ROUTER);
         uint256 lp0Balance = IERC20Upgradeable(lpToken0).balanceOf(address(this));
         uint256 lp1Balance = IERC20Upgradeable(lpToken1).balanceOf(address(this));
@@ -183,7 +186,6 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
         if (lp0Balance != 0 && lp1Balance != 0) {
             IERC20Upgradeable(lpToken0).safeIncreaseAllowance(TRISOLARIS_ROUTER, lp0Balance);
             IERC20Upgradeable(lpToken1).safeIncreaseAllowance(TRISOLARIS_ROUTER, lp1Balance);
-            uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
             IUniswapV2Router02(TRISOLARIS_ROUTER).addLiquidity(
                 lpToken0,
                 lpToken1,
@@ -194,7 +196,6 @@ contract ReaperStrategyPolarisLP is ReaperBaseStrategyv2 {
                 address(this),
                 block.timestamp
             );
-            wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         }
     }
 
